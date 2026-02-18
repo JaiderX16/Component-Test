@@ -1,0 +1,459 @@
+:root {
+  --bg-color: #050505;
+  --panel-bg: rgba(255, 255, 255, 0.03);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.3);
+  --danger: #ef4444;
+  --sidebar-width: 280px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100%;
+}
+
+.playground-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100%;
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, #fff, #a0a0a0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.search-container {
+  padding: 16px;
+}
+
+.search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: white;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.component-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.component-item {
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.component-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.component-item.active {
+  background: var(--accent-glow);
+  color: #fff;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Main Area */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(20, 20, 20, 0.1) 0%, transparent 100%),
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+.top-bar {
+  height: 64px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.view-controls {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.view-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn.active {
+  background: white;
+  color: black;
+}
+
+/* Preview Area */
+.preview-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow: auto;
+}
+
+.preview-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+  transition: width 0.3s ease;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* If no component is selected */
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-state h2 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+/* Error States in Preview */
+.error-card {
+  padding: 40px;
+  text-align: center;
+  max-width: 400px;
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.error-title {
+  color: var(--danger);
+  margin-bottom: 12px;
+}
+
+.error-message {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.retry-button {
+  background: var(--text-primary);
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ==================== RESPONSIVE STYLES ==================== */
+
+/* Hamburger Menu Button (Hidden on Desktop) */
+.hamburger-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1001;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
+}
+
+/* Close button inside sidebar (Hidden on Desktop) */
+.close-sidebar-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-sidebar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Overlay (Hidden on Desktop) */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+  cursor: pointer;
+}
+
+/* Mobile & Tablet: < 1024px */
+@media (max-width: 1023px) {
+
+  /* Show hamburger button */
+  .hamburger-btn {
+    display: flex;
+  }
+
+  /* Update sidebar header to flex for close button */
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .close-sidebar-btn {
+    display: block;
+  }
+
+  /* Sidebar: Hidden by default, slides in from left */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+    width: min(var(--sidebar-width), 80vw);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Show overlay when sidebar is open */
+  .sidebar.open~.main-content::before,
+  .sidebar-overlay {
+    display: block;
+  }
+
+  /* Adjust main content to use full width */
+  .main-content {
+    width: 100%;
+  }
+
+  /* Adjust top bar padding for mobile */
+  .top-bar {
+    padding: 0 clamp(12px, 3vw, 24px);
+    padding-left: 70px;
+    /* Make room for hamburger */
+    height: clamp(56px, 10vh, 64px);
+  }
+
+  /* Adjust preview container padding */
+  .preview-container {
+    padding: clamp(16px, 3vw, 40px);
+  }
+
+  /* Make view controls more compact on mobile */
+  .view-controls {
+    gap: clamp(4px, 1vw, 8px);
+  }
+
+  .view-btn {
+    padding: clamp(4px, 1vw, 6px) clamp(8px, 2vw, 12px);
+    font-size: clamp(0.7rem, 2vw, 0.8rem);
+  }
+}
+
+/* Mobile Only: < 768px */
+@media (max-width: 767px) {
+
+  /* Hide "Auto" text on smallest screens, keep icon buttons only */
+  .view-btn:first-child {
+    font-size: 0;
+    padding: 8px;
+  }
+
+  .view-btn:first-child::after {
+    content: "Auto";
+    font-size: 0.7rem;
+  }
+
+  /* Make component list items more touch-friendly */
+  .component-item {
+    padding: 14px 16px;
+    font-size: 0.95rem;
+  }
+
+  /* Adjust sidebar width for very small screens */
+  .sidebar {
+    width: min(var(--sidebar-width), 85vw);
+  }
+
+  /* Stack view controls if needed */
+  .top-bar {
+    gap: 8px;
+  }
+
+  .current-info span {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Tablet: 768px - 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .top-bar {
+    padding-left: 80px;
+  }
+
+  .sidebar {
+    width: clamp(260px, 35vw, 320px);
+  }
+}
+
+/* Desktop: 1024px+ */
+@media (min-width: 1024px) {
+
+  /* Sidebar always visible */
+  .sidebar {
+    position: relative;
+    transform: none;
+  }
+
+  /* Hide mobile-only elements */
+  .hamburger-btn,
+  .sidebar-overlay,
+  .close-sidebar-btn {
+    display: none !important;
+  }
+
+  .sidebar-header {
+    display: block;
+  }
+}
+
+/* Large Desktop: 1440px+ */
+@media (min-width: 1440px) {
+  :root {
+    --sidebar-width: 320px;
+  }
+}
