@@ -1,0 +1,291 @@
+@layer toggle {
+    .container {
+        --unchecked: hsl(218, 8%, 81%);
+        --control: hsl(300, 100%, 100%);
+        --border: 5px;
+        --width: 140;
+        --height: 60;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .liquidToggle {
+        --checked: hsl(var(--hue, 144),
+                calc((8 + (var(--complete) / 100 * (92))) * 1%),
+                calc((81 - (var(--complete) / 100 * (81 - 43))) * 1%));
+        height: calc(var(--height) * 1px);
+        width: calc(var(--width) * 1px);
+        border-radius: 100px;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        position: relative;
+        overflow: visible;
+        container-type: inline-size;
+        background: #0000;
+        transition: outline var(--transition) var(--ease);
+        outline-offset: 2px;
+        transform-style: preserve-3d;
+    }
+
+    .liquidToggle:focus-visible {
+        outline: 4px solid color-mix(in oklch, var(--checked), #0000);
+    }
+
+    .liquidToggle:active {
+        outline: none;
+    }
+
+    .indicator {
+        border-radius: 100px;
+        pointer-events: none;
+        height: 100%;
+        width: 100%;
+        background: var(--checked);
+        position: absolute;
+        top: 50%;
+        scale: 1;
+        left: 50%;
+        translate: -50% -50%;
+    }
+
+    .knockout {
+        height: calc(var(--height) * 1px);
+        width: calc(var(--width) * 1px);
+        border-radius: 100px;
+        /* filter: url(#remove-black);  <-- Removed to use inline style with dynamic ID */
+        position: absolute;
+        inset: 0;
+        will-change: filter, scale;
+        transform: translate3d(0, 0, 0);
+    }
+
+    .indicatorMasked {
+        background: var(--checked);
+        z-index: 12;
+        height: 100%;
+        width: 100%;
+        translate: -50% -50%;
+        container-type: inline-size;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        border-radius: 100px;
+
+        .mask {
+            position: absolute;
+            height: calc(100% - (2 * var(--border)));
+            width: calc(60% - (2 * var(--border)));
+            top: 50%;
+            background: #000;
+            left: var(--border);
+            border-radius: 100px;
+            translate: calc((var(--complete) / 100) * (100cqi - 60cqi - (0 * var(--border)))) -50%;
+            transition-property: height, width, margin, scale, translate;
+            transition-duration: var(--transition);
+            transition-timing-function: var(--ease);
+            will-change: height, width, margin, translate;
+        }
+    }
+
+    .wrapper {
+        position: absolute;
+        inset: 0;
+        border-radius: 100px;
+        clip-path: inset(0 0 0 0 round 100px);
+        filter: blur(6px);
+        transition: filter var(--transition) var(--ease);
+    }
+
+    .liquids {
+        position: absolute;
+        inset: 0;
+        transform: translate3d(0, 0, 0);
+        border-radius: 100px;
+        overflow: hidden;
+        /* filter: url(#goo); <-- Removed to use inline style with dynamic ID */
+
+        .liquidShadow {
+            position: absolute;
+            inset: 0;
+            box-shadow: inset 0px 0px 3px 4px var(--checked),
+                inset calc(((var(--complete) / 100) * 8px) + -4px) 0px 3px 4px var(--checked);
+            border-radius: 100px;
+        }
+
+        .liquidTrack {
+            content: '';
+            height: calc((var(--height) * 1px) - (0 * var(--border)));
+            width: calc((var(--width) * 1px) - (0 * var(--border)));
+            background: var(--checked);
+            border-radius: 100px;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transition-property: height, width, filter, left;
+            transition-duration: var(--transition);
+            transition-timing-function: var(--ease);
+            translate: calc((var(--complete) / 100) * (100cqi - 100% - (6 * var(--border)))) -50%;
+        }
+    }
+
+    .indicatorLiquid {
+        position: absolute;
+        height: calc(100% - (2 * var(--border)));
+        width: calc(60% - (2 * var(--border)));
+        container-type: inline-size;
+        top: 50%;
+        background: #0000;
+        left: var(--border);
+        border-radius: 100px;
+        translate: calc((var(--complete) / 100) * (100cqi - 100% - (2 * var(--border)))) -50%;
+        transition-property: scale;
+        transition-duration: var(--transition);
+        transition-timing-function: var(--ease);
+
+        .shadow {
+            opacity: 0;
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 100px;
+            box-shadow: 1px -1px 2px hsl(0 0% 100% / 0.5) inset,
+                0px -1px 2px hsl(0 0% 100% / 0.5) inset,
+                -1px -1px 2px hsl(0 0% 100% / 0.5) inset,
+                1px 1px 2px hsl(0 0% 30% / 0.5) inset,
+                -8px 4px 10px -6px hsl(0 0% 30% / 0.25) inset,
+                -1px 1px 6px hsl(0 0% 30% / 0.25) inset,
+                -1px -1px 8px hsl(0 0% 60% / 0.15), 1px 1px 2px hsl(0 0% 30% / 0.15),
+                2px 2px 6px hsl(0 0% 30% / 0.15),
+                -2px -1px 2px hsl(0 0% 100% / 0.25) inset,
+                3px 6px 16px -6px hsl(0 0% 30% / 0.5);
+            z-index: 20;
+            transition: opacity var(--transition) var(--ease);
+        }
+
+        .cover {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: white;
+            border-radius: 100px;
+            transition: opacity var(--transition) var(--ease);
+        }
+    }
+}
+
+@layer transitions {
+    .container {
+        --transition: 0.2s;
+        --ease: ease-out;
+    }
+
+    .liquidToggle[data-bounce='true']:active,
+    .liquidToggle[data-bounce='true'][data-pressed='true'] {
+        --transition: 0.6s;
+        --ease: linear(0 0%,
+                0.6091 3.69%,
+                1.0259 7.24%,
+                1.1733 9.05%,
+                1.283 10.92%,
+                1.3562 12.87%,
+                1.3948 14.95%,
+                1.4014 16.03%,
+                1.3999 17.16%,
+                1.3731 19.64%,
+                1.3202 22.27%,
+                1.1394 29.39%,
+                1.0582 33.17%,
+                0.9943 37.45%,
+                0.9734 39.64%,
+                0.9593 41.92%,
+                0.9505 45.08%,
+                0.9517 48.7%,
+                0.9924 63.02%,
+                1.0046 71.2%,
+                1.0061 78.24%,
+                1 100%);
+    }
+
+    .liquidToggle[data-pressed='true'] .liquidTrack {
+        min-height: 30px;
+    }
+
+    /* Active states */
+    .liquidToggle[data-active='true'] .indicatorMasked .mask,
+    .liquidToggle:active .indicatorMasked .mask {
+        height: calc((100% - (2 * var(--border))) * (1.65 - (var(--delta, 0) * 0.025)));
+        width: calc((60% - (2 * var(--border))) * (1.65 + (var(--delta, 0) * 0.025)));
+        margin-left: calc((60% - (2 * var(--border))) * ((.65 + (var(--delta, 0) * 0.025)) * -0.5));
+    }
+
+    .liquidToggle[data-active='true'] .indicatorLiquid,
+    .liquidToggle:active .indicatorLiquid {
+        scale: calc(1.65 + (var(--delta, 0) * 0.025)) calc(1.65 - (var(--delta, 0) * 0.025));
+    }
+
+    .liquidToggle[data-active='true'] .wrapper,
+    .liquidToggle:active .wrapper {
+        filter: blur(0px);
+    }
+
+    .liquidToggle[data-active='true'] .indicatorLiquid .shadow,
+    .liquidToggle:active .indicatorLiquid .shadow {
+        opacity: 1;
+    }
+
+    .liquidToggle[data-active='true'] .indicatorLiquid .cover,
+    .liquidToggle:active .indicatorLiquid .cover {
+        opacity: 0;
+    }
+
+    .liquidToggle[data-active='true'] .indicatorLiquid .liquidTrack,
+    .liquidToggle:active .indicatorLiquid .liquidTrack {
+        left: calc(var(--border) * 3);
+        height: calc((var(--height) * 1px) - (6 * var(--border)));
+    }
+}
+
+@layer debug {
+    .arrow {
+        font-family: 'Gloria Hallelujah', cursive;
+        font-size: .875rem;
+        position: absolute;
+        opacity: .6;
+        pointer-events: none;
+    }
+
+    .arrowMain {
+        right: 120%;
+        rotate: -30deg;
+        transition: opacity .26s ease-out;
+
+        span {
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        svg {
+            rotate: 10deg;
+            width: 24px;
+            top: 150%;
+            left: 50%;
+            position: absolute;
+            scale: -1 1;
+        }
+    }
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}

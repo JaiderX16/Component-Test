@@ -1,0 +1,55 @@
+.glassContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 300px;
+  height: 200px;
+  border-radius: 30px;
+  padding: 30px;
+  
+  /* Dynamic theme variables */
+  --glass-bg-color: var(--glass-bg, rgba(255, 255, 255, 0.4));
+  --glass-shadow-color: var(--glass-shadow, rgba(255, 255, 255, 0.8));
+  --text-color: var(--text-color, #000000);
+}
+
+.glassContainer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 30px;
+  /* Use the same soft border + inset reflection technique as buttons, but finer */
+  box-shadow: 
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.3), /* Thinner, sharper edge */
+    inset 0 0 1px 0px var(--glass-shadow-color); /* Subtle glow without thick spread */
+  background-color: var(--glass-bg-color);
+}
+
+.glassContainer::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 30px;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(10px);
+  
+  /* Apply the unique turbulence filter for the container */
+  filter: url(#container-glass);
+  -webkit-filter: url(#container-glass);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.text {
+  position: relative;
+  z-index: 2;
+  color: var(--text-color);
+  text-align: center;
+  line-height: 1.6;
+  font-size: 1rem;
+  font-weight: bold;
+}

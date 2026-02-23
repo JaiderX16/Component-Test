@@ -1,0 +1,197 @@
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --text-color: #000000;
+    --btn-stroke: #000000;
+    --bg-overlay: rgba(0, 0, 0, 0);
+    --glass-shadow: rgba(255, 255, 255, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --accent-color: #007AFF;
+}
+
+[data-theme='dark'] {
+    --glass-bg: rgba(0, 0, 0, 0.35);
+    --text-color: #ffffff;
+    --btn-stroke: #ffffff;
+    --bg-overlay: rgba(0, 0, 0, 0.6);
+    --glass-shadow: rgba(0, 0, 0, 0.5);
+    --glass-border: rgba(255, 255, 255, 0.15);
+}
+
+.glass-preview-wrapper {
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 500px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.5s ease;
+}
+
+[data-theme='dark'] .glass-preview-wrapper {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.glassContainer {
+    position: relative;
+    width: 340px;
+    min-height: 220px;
+    display: flex;
+    padding: 30px;
+    border-radius: 32px;
+    isolation: isolate;
+}
+
+.glassContainer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: inherit;
+    border: 1px solid var(--glass-border);
+    box-shadow:
+        0 8px 32px 0 rgba(31, 38, 135, 0.15),
+        inset 0 0 0 1px var(--glass-border);
+    z-index: -1;
+}
+
+.glassContainer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    border-radius: inherit;
+    filter: url(#container-glass);
+    opacity: 0.8;
+}
+
+.glass-content {
+    position: relative;
+    z-index: 2;
+}
+
+.text {
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 500;
+    margin: 0;
+    text-align: center;
+}
+
+.glassBtn {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glassBtn:hover {
+    transform: scale(1.05) rotate(5deg);
+}
+
+.glassBtn:active {
+    transform: scale(0.95);
+}
+
+.glassBtn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: -1;
+}
+
+.glassBtn::after {
+    content: '';
+    position: absolute;
+    inset: -10%;
+    z-index: -2;
+    border-radius: 50%;
+    filter: url(#btn-glass);
+}
+
+.glassBtn svg {
+    width: 32px;
+    height: 32px;
+    stroke: var(--btn-stroke);
+    stroke-width: 2.5px;
+}
+
+.themeToggle {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.themeToggle:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.themeToggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--btn-stroke);
+}
+
+[data-theme='dark'] .sun,
+.moon {
+    display: none;
+}
+
+[data-theme='light'] .sun {
+    display: block;
+}
+
+[data-theme='dark'] .moon {
+    display: block;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.glassContainer {
+    animation: float 6s ease-in-out infinite;
+}

@@ -10,14 +10,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@liquid-svg-glass/core": "^0.0.1",
+    "@liquid-svg-glass/react": "^0.0.2",
     "@mediapipe/tasks-vision": "^0.10.32",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@sparkjsdev/spark": "^0.1.10",
+    "@specy/liquid-glass-react": "^1.0.2",
     "framer-motion": "^12.31.0",
+    "gsap": "^3.14.2",
+    "html-to-react": "^1.7.0",
+    "lit": "^3.3.2",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-shadow": "^20.6.0",
     "three": "^0.182.0"
   },
   "devDependencies": {
@@ -29,6 +36,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "sass-embedded": "^1.97.3",
     "vite": "^7.2.4"
   }
 }

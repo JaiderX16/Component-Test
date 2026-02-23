@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Search, Box, Smartphone, Tablet, Monitor, RefreshCw, XCircle, Menu, X } from 'lucide-react';
-import ErrorBoundary from './components/Playground/ErrorBoundary';
+import ErrorBoundary from './playground/internal/ErrorBoundary';
 
 // Dynamic component discovery
 const componentFiles = import.meta.glob('./playground-components/*.jsx');

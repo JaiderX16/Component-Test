@@ -1,0 +1,145 @@
+.visionBtn {
+  /* Use dynamic variables that will be set by the parent container/theme */
+  --glass-bg-color: var(--glass-bg, rgba(255, 255, 255, 0.1));
+  --glass-border-color: var(--glass-border, rgba(255, 255, 255, 0.2));
+  --glass-shadow-color: var(--glass-shadow, rgba(255, 255, 255, 0.8));
+  
+  /* Hover state variables - default to bright for light mode, will be overridden for dark mode */
+  --glass-hover-bg: var(--glass-hover-bg, rgba(255, 255, 255, 0.25));
+  --glass-hover-border: var(--glass-hover-border, rgba(255, 255, 255, 0.6));
+  --glass-hover-glow: var(--glass-hover-glow, rgba(255, 255, 255, 0.3));
+  
+  /* Soft blurred border using box-shadow instead of solid border */
+  /* border: 1px solid var(--glass-border-color); */
+  border: none;
+  background: var(--glass-bg-color);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s ease, background 0.3s ease;
+  
+  /* The core Apple Glass effect: Saturation Only (Blur removed as requested) */
+  backdrop-filter: saturate(180%);
+  -webkit-backdrop-filter: saturate(180%);
+  
+  /* Refined shadows for thinner/finer border look */
+  box-shadow: 
+    0 4px 24px -1px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.3), /* Thinner, sharper edge */
+    inset 0 0 1px 0px var(--glass-shadow-color); /* Subtle glow without thick spread */
+    
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  touch-action: none;
+}
+
+/* Base Glass Panel Style (for backgrounds) */
+.glassPanel {
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  
+  position: absolute;
+  inset: 0;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  pointer-events: none; /* Allow clicks to pass through to iframe if needed, but usually glass blocks interaction unless it's an overlay for visual only */
+  z-index: 1;
+}
+
+/* Chromatic Aberration / Iridescent Rim */
+.visionBtn::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg, 
+    rgba(255, 0, 128, 0.5), /* Magenta */
+    rgba(0, 255, 255, 0.5), /* Cyan */
+    rgba(255, 255, 0, 0.5)  /* Yellow */
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Caustic Highlight (Top "Liquid" Reflection) */
+.visionBtn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.2) 40%,
+    transparent 100%
+  );
+  border-radius: 50% 50% 50% 50% / 100% 100% 20% 20%; /* Distorted curve */
+  opacity: 0.25;
+  filter: blur(2px);
+  transform: scaleX(0.85);
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+/* Interactive Shine Layer */
+.shine {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%), 
+    rgba(255, 255, 255, 0.6) 0%, 
+    transparent 50%
+  );
+  opacity: 0;
+  mix-blend-mode: overlay;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+/* Hover States */
+.visionBtn:hover {
+  transform: scale(1.05);
+  /* Use dynamic hover variables */
+  background: var(--glass-hover-bg);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px var(--glass-hover-border), /* Stronger rim light on hover */
+    inset 0 0 10px 0px var(--glass-hover-glow); /* Soft inner glow */
+}
+
+.visionBtn:hover .shine {
+  opacity: 1;
+}
+
+.visionBtn:hover::before {
+  opacity: 0.8;
+}
+
+.visionBtn:active {
+  transform: scale(0.96);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Content styling */
+.content {
+  position: relative;
+  z-index: 2;
+  color: white;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
