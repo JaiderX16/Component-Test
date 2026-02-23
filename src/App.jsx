@@ -3,7 +3,7 @@ import { Search, Box, Smartphone, Tablet, Monitor, RefreshCw, XCircle, Menu, X }
 import ErrorBoundary from './playground/internal/ErrorBoundary';
 
 // Dynamic component discovery
-const componentFiles = import.meta.glob('./playground-components/*.jsx');
+const componentFiles = import.meta.glob(['./playground-components/*.jsx', './playground-components/*.tsx']);
 
 function App() {
   const [components, setComponents] = useState([]);
@@ -17,7 +17,7 @@ function App() {
   useEffect(() => {
     const names = Object.keys(componentFiles).map(path => {
       const fileName = path.split('/').pop();
-      return fileName.replace('.jsx', '');
+      return fileName; // Keep extension to distinguish between .jsx and .tsx
     });
     setComponents(names);
   }, []);
@@ -28,10 +28,10 @@ function App() {
     }
   }, [selectedComponentName]);
 
-  const loadComponent = async (name) => {
+  const loadComponent = async (fileName) => {
     setLoading(true);
     try {
-      const path = `./playground-components/${name}.jsx`;
+      const path = `./playground-components/${fileName}`;
       const module = await componentFiles[path]();
       setCurrentComponent(() => module.default);
     } catch (error) {

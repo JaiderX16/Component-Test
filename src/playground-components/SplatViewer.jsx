@@ -1,20 +1,57 @@
 import React, { useRef, useState, useEffect, Suspense, useCallback, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { SplatMesh } from '@sparkjsdev/spark';
+
+const IDLE_TIMEOUT = 4000;   // ms sin interacción antes de auto-rotar
+const ROTATE_SPEED = 0.15;   // rad/s
 
 export default function SplatViewer() {
     const [splatUrl, setSplatUrl] = useState('https://sparkjs.dev/assets/splats/butterfly.spz');
     const [fileType, setFileType] = useState('spz');
     const [fileBytes, setFileBytes] = useState(null);
+    const [fileSize, setFileSize] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [orbitTarget, setOrbitTarget] = useState(null);
     const [error, setError] = useState(null);
     const [fps, setFps] = useState(0);
     const [viewMode, setViewMode] = useState('splat');
     const [modelKey, setModelKey] = useState(0);
+    const [modelInfo, setModelInfo] = useState(null);
+
+    // Performance state
+    const [perfMode, setPerfMode] = useState('AUTO'); // 'AUTO' o 'MAX'
+    const [isMobile] = useState(() => typeof window !== 'undefined' && (window.matchMedia('(pointer: coarse)').matches || /Mobi|Android/i.test(navigator.userAgent)));
+
+    const [quality, setQuality] = useState(isMobile ? 'MED' : 'MAX');
+    const [antialiasing, setAntialiasing] = useState(true);
+    const [dpr, setDpr] = useState(typeof window !== 'undefined' ? window.devicePixelRatio : 2);
+    const [splatLimit, setSplatLimit] = useState(isMobile ? 1500000 : 20000000);
 
     const fileInputRef = useRef(null);
+    const cameraControlsRef = useRef(null);
+    const idleTimer = useRef(Date.now());
+
+    // Lógica de Optimización Inteligente (solo en modo AUTO)
+    useEffect(() => {
+        if (perfMode === 'AUTO' && fps > 0) {
+            const nativeDPR = typeof window !== 'undefined' ? window.devicePixelRatio : 2;
+
+            if (fps < 40) {
+                // Si el rendimiento cae, bajar DPR y límite progresivamente
+                setDpr(prev => Math.max(0.75, prev - 0.1));
+                setQuality('LOW');
+                if (isMobile) setSplatLimit(Math.max(500000, splatLimit - 100000));
+            } else if (fps > 55) {
+                // Si el rendimiento es excelente, intentar subir a nativo
+                setDpr(prev => Math.min(nativeDPR, prev + 0.05));
+                setQuality(isMobile ? 'MED' : 'MAX');
+            }
+        }
+    }, [fps, perfMode, isMobile, splatLimit]);
+
+
 
     const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
@@ -22,17 +59,26 @@ export default function SplatViewer() {
 
         setError(null);
         setFileBytes(null);
+        setModelInfo(null);
         setModelKey(prev => prev + 1);
 
         try {
             const extension = file.name.split('.').pop().toLowerCase();
             setFileType(extension);
+            setFileSize(file.size);
             const buffer = await file.arrayBuffer();
             setFileBytes(buffer);
             setSplatUrl(null);
         } catch (err) {
             setError("Error leyendo el archivo");
         }
+    };
+
+    const formatBytes = (bytes) => {
+        if (bytes == null) return '—';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
     };
 
     const onLoadingStart = useCallback(() => setLoading(true), []);
@@ -42,8 +88,25 @@ export default function SplatViewer() {
         setLoading(false);
     }, []);
 
+    // Cuando se calcula el centro de masa, mover el target de la cámara para orbitar ahí
+    useEffect(() => {
+        if (orbitTarget && cameraControlsRef.current) {
+            cameraControlsRef.current.setTarget(
+                orbitTarget[0], orbitTarget[1], orbitTarget[2], true
+            );
+        }
+    }, [orbitTarget]);
+
     return (
-        <div style={{ position: 'relative', width: '100%', height: '600px', background: '#000', borderRadius: '12px', overflow: 'hidden' }}>
+        <div
+            style={{ position: 'relative', width: '100%', height: '600px', background: '#000', borderRadius: '12px', overflow: 'hidden' }}
+            onMouseDown={() => idleTimer.current = Date.now()}
+            onMouseMove={() => idleTimer.current = Date.now()}
+            onWheel={() => idleTimer.current = Date.now()}
+            onTouchStart={() => idleTimer.current = Date.now()}
+            onTouchMove={() => idleTimer.current = Date.now()}
+        >
+            {/* ── Toolbar superior ── */}
             <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 20, display: 'flex', gap: '12px', alignItems: 'center', pointerEvents: 'auto', flexWrap: 'wrap' }}>
                 <button onClick={() => fileInputRef.current?.click()} style={{ padding: '8px 16px', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '6px', cursor: 'pointer' }}>
                     Subir .splat / .ply / .spz...
@@ -55,9 +118,73 @@ export default function SplatViewer() {
                 <button onClick={() => setViewMode('points')} style={{ padding: '8px 16px', background: viewMode === 'points' ? '#0a5' : '#444', color: 'white', border: '1px solid #555', borderRadius: '6px', cursor: 'pointer' }}>
                     Vista Nube de Puntos
                 </button>
-                <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.6)', color: '#0f0', borderRadius: '6px', fontFamily: 'monospace', fontSize: '14px' }}>
-                    FPS: {fps}
+                <button onClick={() => cameraControlsRef.current?.reset(true)} style={{ padding: '8px 16px', background: '#444', color: 'white', border: '1px solid #555', borderRadius: '6px', cursor: 'pointer' }}>
+                    Reset Camera
+                </button>
+                <button
+                    onClick={() => {
+                        const newMode = perfMode === 'AUTO' ? 'MAX' : 'AUTO';
+                        setPerfMode(newMode);
+                        if (newMode === 'MAX') {
+                            setDpr(typeof window !== 'undefined' ? window.devicePixelRatio : 2);
+                            setSplatLimit(20000000);
+                            setQuality('MAX');
+                        }
+                    }}
+                    style={{
+                        padding: '8px 16px',
+                        background: perfMode === 'MAX' ? '#f50' : '#444',
+                        color: 'white', border: '1px solid #555', borderRadius: '6px', cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Modo: {perfMode}
+                </button>
+                {fps > 55 && fps < 65 && (
+                    <div style={{ fontSize: '11px', color: '#888', maxWidth: '160px', lineHeight: '1.2' }}>
+                        💡 Capado a 60? Usa <code style={{ color: '#aaa' }}>--disable-frame-rate-limit</code> en Chrome para +120
+                    </div>
+                )}
+            </div>
+
+            {/* ── Panel de estadísticas (abajo-derecha) ── */}
+            <div style={{
+                position: 'absolute', bottom: 10, right: 10, zIndex: 20,
+                background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
+                borderRadius: '10px', padding: '10px 14px',
+                fontFamily: 'monospace', fontSize: '12px', color: '#ccc',
+                lineHeight: 1.7, minWidth: '220px', pointerEvents: 'none',
+                border: '1px solid rgba(255,255,255,0.08)',
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ color: '#0f0', fontWeight: 700, fontSize: 14 }}>FPS: {fps}</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                        {isMobile && <span style={{ padding: '1px 6px', background: '#333', borderRadius: 4, fontSize: 10, color: '#aaa' }}>MOBILE</span>}
+                        <span style={{
+                            padding: '1px 8px', borderRadius: 4, fontWeight: 700, fontSize: 11,
+                            background: quality === 'MAX' ? '#0a5' : quality === 'MED' ? '#c80' : '#c33',
+                            color: '#fff',
+                        }}>{quality}</span>
+                    </div>
                 </div>
+                {modelInfo && (
+                    <>
+                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                        <div><span style={{ color: '#888' }}>Formato:</span> .{modelInfo.fileType}</div>
+                        <div><span style={{ color: '#888' }}>Peso:</span> {formatBytes(modelInfo.fileSize)}</div>
+                        <div><span style={{ color: '#888' }}>Puntos totales:</span> {modelInfo.totalSplats?.toLocaleString()}</div>
+                        <div><span style={{ color: '#888' }}>Puntos renderizados:</span> {modelInfo.renderedSplats?.toLocaleString()}</div>
+                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                        <div><span style={{ color: '#888' }}>Dimensiones (m):</span> {modelInfo.dimensions}</div>
+                        <div><span style={{ color: '#888' }}>Escala prom.:</span> {modelInfo.avgScale}</div>
+                        <div><span style={{ color: '#888' }}>Opacidad prom.:</span> {modelInfo.avgOpacity}</div>
+                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                        <div><span style={{ color: '#888' }}>Sort:</span> {modelInfo.sortMode}</div>
+                        <div><span style={{ color: '#888' }}>Half Precision:</span> {modelInfo.halfPrecision ? 'Sí' : 'No'}</div>
+                        <div><span style={{ color: '#888' }}>DPR:</span> {Array.isArray(dpr) ? dpr.join(' – ') : dpr}</div>
+                        <div><span style={{ color: '#888' }}>Antialiasing:</span> {antialiasing ? 'Sí' : 'No'}</div>
+                    </>
+                )}
             </div>
 
             {(loading || error) && (
@@ -67,39 +194,45 @@ export default function SplatViewer() {
                 </div>
             )}
 
-            <Canvas gl={{ antialias: true, powerPreference: 'high-performance' }} dpr={[1, 2]} camera={{ position: [0, 1.6, -6], fov: 60 }}>
+            <Canvas gl={{ antialias: antialiasing, powerPreference: 'high-performance', alpha: true }} dpr={dpr} camera={{ position: [0, 1.6, -6], fov: 60 }}>
                 <color attach="background" args={['#111111']} />
                 <ambientLight intensity={1.3} />
+                <gridHelper args={[20, 20, 0x444444, 0x222222]} position={[0, 0, 0]} />
+                <axesHelper args={[2]} position={[0, 0.1, 0]} />
                 <FpsTracker setFps={setFps} />
                 <Suspense fallback={null}>
                     <SplatOrPointsScene
-                        key={`${splatUrl}-${modelKey}`}
+                        key={`${splatUrl}-${modelKey}-${quality}`} // Re-mount on quality change to apply limit
                         url={splatUrl}
                         fileBytes={fileBytes}
                         fileType={fileType}
                         viewMode={viewMode}
+                        limit={splatLimit}
                         onLoadingStart={onLoadingStart}
                         onLoaded={onLoaded}
                         onError={onErrorCallback}
+                        onOrbitTarget={setOrbitTarget}
+                        onModelInfo={setModelInfo}
+                        fileSize={fileSize}
                     />
-                    <OrbitControls 
-                        enableDamping 
-                        dampingFactor={0.08} 
-                        rotateSpeed={0.7} 
-                        zoomSpeed={1.1} 
-                        minDistance={0.4} 
-                        maxDistance={120} 
-                        target={[0, 1, 0]} // Set target slightly up to match eye level
+                    <CameraControls
+                        ref={cameraControlsRef}
+                        dollySpeed={0.8}
+                        minDistance={0.4}
+                        maxDistance={120}
+                        smoothTime={0.25}
                     />
+                    <AutoRotate cameraControlsRef={cameraControlsRef} idleTimer={idleTimer} />
                 </Suspense>
             </Canvas>
         </div>
     );
 }
 
-function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart, onLoaded, onError }) {
+function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, limit, onLoadingStart, onLoaded, onError, onOrbitTarget, onModelInfo, fileSize }) {
     const [splatMesh, setSplatMesh] = useState(null);
     const [splatData, setSplatData] = useState(null);
+    const [centerOffset, setCenterOffset] = useState([0, 0, 0]);
 
     const dotTexture = useMemo(() => {
         const canvas = document.createElement('canvas');
@@ -132,24 +265,33 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart
                 onLoad: () => {
                     const num = mesh.numSplats;
                     if (num > 0) {
-                        const limit = 2000000; // Aumentar límite de splats
-                        const count = Math.min(num, limit);
-                        const centers = new Float32Array(count * 3);
-                        const colors = new Float32Array(count * 3);
-                        let i = 0;
-                        mesh.forEachSplat((index, center, scales, quaternion, opacity, color) => {
-                            if (i >= count) return;
-                            centers[i * 3] = center.x; centers[i * 3 + 1] = center.y; centers[i * 3 + 2] = center.z;
-                            colors[i * 3] = color.r; colors[i * 3 + 1] = color.g; colors[i * 3 + 2] = color.b;
-                            i++;
+                        // Carga instantánea: No procesamos puntos aquí para no bloquear el hilo principal.
+                        // Usamos los metadatos básicos del mesh.
+
+                        // Centrado ligero (usando bounding box si está disponible, o centro por defecto)
+                        // La mayoría de los splats ya vienen centrados o la librería maneja el bounding volume.
+                        // Si no, podemos calcularlo de forma diferida.
+                        setCenterOffset([0, 0, 0]);
+                        onOrbitTarget?.([0, 0, 0]);
+
+                        onModelInfo?.({
+                            totalSplats: num,
+                            renderedSplats: num,
+                            fileType,
+                            fileSize,
+                            dimensions: "Auto-detecting...",
+                            avgScale: "—",
+                            avgOpacity: "—",
+                            sortMode: 'GPU (Instant)',
+                            halfPrecision: false,
                         });
-                        setSplatData({ centers, colors });
+
                         setSplatMesh(mesh);
                         onLoaded?.();
                     }
                 },
                 sortMode: 'gpu',
-                halfPrecision: false, // Desactivar halfPrecision para máxima calidad
+                halfPrecision: false,
             });
         } catch (err) {
             console.error(err);
@@ -159,7 +301,42 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart
         return () => {
             if (mesh) mesh.dispose?.();
         };
-    }, []);
+    }, [url, fileBytes, fileType]); // Eliminado 'limit' de aquí para no recargar el mesh completo si cambia el límite
+
+    // Efecto separado para generar la nube de puntos SOLO si es necesario (Lazy Loading)
+    useEffect(() => {
+        if (viewMode === 'points' && splatMesh && !splatData) {
+            console.log("Generando nube de puntos en segundo plano...");
+            const num = splatMesh.numSplats;
+            const count = Math.min(num, limit);
+            const centers = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+
+            // Procesamiento por chunks para no bloquear totalmente la UI
+            let i = 0;
+            const processChunk = () => {
+                const chunkSize = 50000;
+                const end = Math.min(i + chunkSize, count);
+
+                // NOTA: react-three-gaussian-splat / sparkjs suele tener métodos internos,
+                // pero si usamos forEachSplat, lo hacemos en trozos.
+                splatMesh.forEachSplat((index, center, scales, quaternion, opacity, color) => {
+                    if (index < i || index >= end) return;
+                    centers[index * 3] = center.x; centers[index * 3 + 1] = center.y; centers[index * 3 + 2] = center.z;
+                    colors[index * 3] = color.r; colors[index * 3 + 1] = color.g; colors[index * 3 + 2] = color.b;
+                });
+
+                i = end;
+                if (i < count) {
+                    requestAnimationFrame(processChunk);
+                } else {
+                    setSplatData({ centers, colors });
+                    console.log("Nube de puntos lista.");
+                }
+            };
+            processChunk();
+        }
+    }, [viewMode, splatMesh, limit, splatData]);
 
     const transitionFactor = useRef(0);
     useFrame((state, delta) => {
@@ -253,7 +430,7 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart
     });
 
     return (
-        <group rotation={[0, 0, Math.PI]}>
+        <group rotation={[0, 0, Math.PI]} position={centerOffset}>
             {splatMesh && <primitive object={splatMesh} />}
             {points && <primitive object={points} />}
         </group>
@@ -262,16 +439,32 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart
 
 function FpsTracker({ setFps }) {
     const frameTimes = useRef([]);
+    const lastTime = useRef(performance.now());
+
     useFrame(() => {
         const now = performance.now();
-        frameTimes.current.push(now);
-        while (frameTimes.current.length > 0 && now - frameTimes.current[0] > 1000) {
-            frameTimes.current.shift();
-        }
-        if (frameTimes.current.length >= 10) {
-            const elapsed = now - frameTimes.current[0];
-            const newFps = Math.round((frameTimes.current.length / elapsed) * 1000);
-            setFps(newFps);
+        const delta = now - lastTime.current;
+        lastTime.current = now;
+
+        frameTimes.current.push(delta);
+        if (frameTimes.current.length > 60) frameTimes.current.shift();
+
+        const avgDelta = frameTimes.current.reduce((a, b) => a + b, 0) / frameTimes.current.length;
+        setFps(Math.round(1000 / avgDelta));
+    });
+    return null;
+}
+
+// Auto-rotación cuando el usuario no interactúa por un tiempo
+function AutoRotate({ cameraControlsRef, idleTimer }) {
+    useFrame((_, delta) => {
+        const controls = cameraControlsRef.current;
+        if (!controls) return;
+
+        const elapsed = Date.now() - idleTimer.current;
+        if (elapsed > IDLE_TIMEOUT) {
+            // Girar azimut (eje Y) suavemente
+            controls.azimuthAngle += ROTATE_SPEED * delta;
         }
     });
     return null;
