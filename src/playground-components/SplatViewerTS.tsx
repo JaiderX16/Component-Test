@@ -162,7 +162,7 @@ export default function SplatViewerTS() {
                 <FpsTracker setFps={setFps} />
                 <Suspense fallback={null}>
                     <SplatOrPointsScene
-                        key={`${splatUrl}-${modelKey}-${quality}`}
+                        key={`${splatUrl}-${modelKey}`}
                         url={splatUrl}
                         fileBytes={fileBytes}
                         fileType={fileType}

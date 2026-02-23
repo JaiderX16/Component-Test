@@ -202,7 +202,7 @@ export default function SplatViewer() {
                 <FpsTracker setFps={setFps} />
                 <Suspense fallback={null}>
                     <SplatOrPointsScene
-                        key={`${splatUrl}-${modelKey}-${quality}`} // Re-mount on quality change to apply limit
+                        key={`${splatUrl}-${modelKey}`} // Solo remontar si cambia el modelo o se fuerza reset
                         url={splatUrl}
                         fileBytes={fileBytes}
                         fileType={fileType}
