@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import CircleButton from './CircleButton';
 import PillButton from './PillButton';
 import GlassContainer from './GlassContainer';
+import NotesSidebar from './NotesSidebar';
 import styles from './GlassButton.module.css';
 import iOSWallpaper from './iOSWallpaper.jpg'; // Import the new wallpaper
 
@@ -173,16 +174,34 @@ const CircleButtonDemo = () => {
           position: 'fixed', // Changed to fixed to stay in place while background scrolls
           inset: 0,
           display: 'flex',
-          flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: '2rem',
           zIndex: 1,
           pointerEvents: 'none',
         }}
       >
-        <div 
-          onPointerDown={handlePointerDown}
+        {/* Floating Sidebar on the Left */}
+        <div style={{
+          position: 'absolute',
+          left: '20px',
+          top: '20px',
+          bottom: '20px',
+          pointerEvents: 'auto',
+          zIndex: 20
+        }}>
+          <NotesSidebar />
+        </div>
+
+        {/* Center Content Group */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '2rem',
+          pointerEvents: 'none' // Let children handle events
+        }}>
+          <div 
+            onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           style={{ 
@@ -257,6 +276,7 @@ const CircleButtonDemo = () => {
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Alias impedit maxime voluptatum dolorum
           reiciendis architecto quo porro.
         </GlassContainer>
+        </div> {/* End Center Content Group */}
       </div>
     </div>
   );

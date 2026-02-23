@@ -67,7 +67,7 @@ export default function SplatViewer() {
                 </div>
             )}
 
-            <Canvas gl={{ antialias: false, powerPreference: 'high-performance' }} dpr={[1, 1.5]} camera={{ position: [0, 1.6, 6], fov: 60 }}>
+            <Canvas gl={{ antialias: true, powerPreference: 'high-performance' }} dpr={[1, 2]} camera={{ position: [0, 1.6, -6], fov: 60 }}>
                 <color attach="background" args={['#111111']} />
                 <ambientLight intensity={1.3} />
                 <FpsTracker setFps={setFps} />
@@ -82,7 +82,15 @@ export default function SplatViewer() {
                         onLoaded={onLoaded}
                         onError={onErrorCallback}
                     />
-                    <OrbitControls enableDamping dampingFactor={0.08} rotateSpeed={0.7} zoomSpeed={1.1} minDistance={0.4} maxDistance={120} />
+                    <OrbitControls 
+                        enableDamping 
+                        dampingFactor={0.08} 
+                        rotateSpeed={0.7} 
+                        zoomSpeed={1.1} 
+                        minDistance={0.4} 
+                        maxDistance={120} 
+                        target={[0, 1, 0]} // Set target slightly up to match eye level
+                    />
                 </Suspense>
             </Canvas>
         </div>
@@ -124,7 +132,7 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart
                 onLoad: () => {
                     const num = mesh.numSplats;
                     if (num > 0) {
-                        const limit = 500000;
+                        const limit = 2000000; // Aumentar límite de splats
                         const count = Math.min(num, limit);
                         const centers = new Float32Array(count * 3);
                         const colors = new Float32Array(count * 3);
@@ -141,7 +149,7 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart
                     }
                 },
                 sortMode: 'gpu',
-                halfPrecision: true,
+                halfPrecision: false, // Desactivar halfPrecision para máxima calidad
             });
         } catch (err) {
             console.error(err);
@@ -245,7 +253,7 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, onLoadingStart
     });
 
     return (
-        <group>
+        <group rotation={[0, 0, Math.PI]}>
             {splatMesh && <primitive object={splatMesh} />}
             {points && <primitive object={points} />}
         </group>
