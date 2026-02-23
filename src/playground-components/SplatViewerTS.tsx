@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { CameraControls } from '@react-three/drei';
 import * as THREE from 'three';
+// @ts-ignore
+import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
+import { Splat, CameraControls } from '@react-three/drei';
 import { SplatMesh } from '@sparkjsdev/spark';
 
 const IDLE_TIMEOUT = 4000;   // ms sin interacción antes de auto-rotar
@@ -40,6 +42,16 @@ export default function SplatViewerTS() {
     const [antialiasing] = useState(true);
     const [dpr, setDpr] = useState(typeof window !== 'undefined' ? window.devicePixelRatio : 2);
     const [splatLimit, setSplatLimit] = useState(isMobile ? 1500000 : 20000000);
+
+    const [hasWebGPU, setHasWebGPU] = useState(false);
+
+    useEffect(() => {
+        if ('gpu' in navigator) {
+            (navigator as any).gpu.requestAdapter().then((adapter: any) => {
+                if (adapter) setHasWebGPU(true);
+            });
+        }
+    }, []);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraControlsRef = useRef<CameraControls>(null);
@@ -137,7 +149,7 @@ export default function SplatViewerTS() {
                 fontFamily: 'monospace', fontSize: '10px', color: '#ccc',
                 pointerEvents: 'none', border: '1px solid rgba(255,255,255,0.1)',
             }}>
-                <div style={{ color: '#0f0', fontWeight: 'bold', marginBottom: '4px' }}>FPS: {fps} (TS Version)</div>
+                <div style={{ color: '#0f0', fontWeight: 'bold', marginBottom: '4px' }}>FPS: {fps} (TS WebGPU: {hasWebGPU ? 'ON' : 'OFF'})</div>
                 {modelInfo && (
                     <>
                         <div>Formato: {modelInfo.fileType}</div>
@@ -155,7 +167,16 @@ export default function SplatViewerTS() {
                 </div>
             )}
 
-            <Canvas gl={{ antialias: antialiasing, powerPreference: 'high-performance', alpha: true }} dpr={dpr} camera={{ position: [0, 1.6, -6], fov: 60 }}>
+            <Canvas
+                gl={((canvas: HTMLCanvasElement) => {
+                    if (hasWebGPU) {
+                        return new WebGPURenderer({ canvas, antialias: antialiasing, alpha: true });
+                    }
+                    return new THREE.WebGLRenderer({ canvas, antialias: antialiasing, powerPreference: 'high-performance', alpha: true });
+                }) as any}
+                dpr={dpr}
+                camera={{ position: [0, 1.6, -6], fov: 60 }}
+            >
                 <color attach="background" args={['#080808']} />
                 <ambientLight intensity={1.5} />
                 <gridHelper args={[20, 20, 0x333333, 0x111111]} />
@@ -355,8 +376,14 @@ function SplatOrPointsScene({ url, fileBytes, fileType, viewMode, limit, onLoadi
 
     return (
         <group rotation={[0, 0, Math.PI]} position={centerOffset}>
-            {splatMesh && <primitive object={splatMesh} />}
-            {points && <primitive object={points} position={viewMode === 'points' ? [0, 0, 0] : [0, -1000, 0]} />}
+            {fileType === 'splat' && url ? (
+                <Splat src={url} alphaTest={0.1} />
+            ) : (
+                <>
+                    {splatMesh && <primitive object={splatMesh} />}
+                    {points && <primitive object={points} position={viewMode === 'points' ? [0, 0, 0] : [0, -1000, 0]} />}
+                </>
+            )}
         </group>
     );
 }
